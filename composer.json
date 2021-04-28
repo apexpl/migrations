@@ -16,8 +16,8 @@
     "license": "MIT",
     "require": {
         "php": ">=8.0.0",
-        "apex/db": "^0.2.2",
-        "apex/container": "^0.2.4",
+        "apex/db": "~0.2",
+        "apex/container": "~0.3",
         "symfony/yaml": "^5.2"
     },
     "require-dev": {

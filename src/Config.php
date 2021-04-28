@@ -54,6 +54,16 @@ class Config
         $this->table_name = $vars['table_name'] ?? 'internal_migrations';
         $this->author = $vars['author'] ?? [];
         $this->packages = $vars['packages'] ?? [];
+
+        // Format dir names in packages
+        foreach ($this->packages as $alias => $vars) { 
+            if (str_starts_with($vars['dir'], '/')) { 
+                continue;
+            }
+            $yaml_dir = dirname(realpath($file));
+            $this->packages[$alias]['dir'] = realpath($yaml_dir . '/' . $vars['dir']);
+        }
+
     }
 
     /**
@@ -65,11 +75,43 @@ class Config
     }
 
     /**
+     * Set table name
+     */
+    public function setTableName(string $name):void
+    {
+        $this->table_name = $name;
+    }
+
+    /**
      * Get author
      */
     public function getAuthor():array
     {
         return $this->author;
+    }
+
+    /**
+     * Set author username
+     */
+    public function setAuthorUsername(string $username):void
+    {
+        $this->author['username'] = $username;
+    }
+
+    /**
+     * Set author name
+     */
+    public function setAuthorName(string $name):void
+    {
+        $this->author['full_name'] = $name;
+    }
+
+    /**
+     * Set author e-mail
+     */
+    public function setAuthorEmail(string $email):void
+    {
+        $this->author['email'] = $email;
     }
 
     /**
@@ -93,6 +135,33 @@ class Config
 
         // Get info
         return [rtrim($this->packages[$alias]['dir'], '/'), $this->packages[$alias]['namespace']];
+    }
+
+    /**
+     * Set packages
+     */
+    public function addPackage(string $alias, string $dir, string $namespace):void
+    {
+        $this->packages[$alias] = [
+            'dir' => $dir, 
+            'namespace' => $namespace
+        ];
+    }
+
+    /**
+     * Delete package
+     */
+    public function deletePackage(string $alias):void
+    {
+        unset($this->packages[$alias]);
+    }
+
+    /**
+     * Purge packages
+     */
+    public function purgePackages():void
+    {
+        $this->packages = [];
     }
 
 }
