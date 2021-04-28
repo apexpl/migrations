@@ -1,0 +1,15 @@
+
+table_name: test_migrations
+
+author:
+  username: mdizak
+  full_name: Matt Dizak
+  email: mdizak@apexpl.io
+
+packages:
+
+  default:
+    dir: ./migrations
+    namespace: "Apex\\Test\\Migrations"
+
+

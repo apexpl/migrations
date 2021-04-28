@@ -1,0 +1,15 @@
+
+table_name: internal_migrations
+
+author:
+  username: jsmith
+  full_name: John Smith
+  email: jsmith@domain.com
+
+packages:
+
+  default:
+    dir: ./migrations
+    namespace: "App\\Migrations"
+
+

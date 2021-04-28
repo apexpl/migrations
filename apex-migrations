@@ -1,0 +1,93 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types = 1);
+
+use Apex\Migrations\Migrations;
+use Apex\Migrations\Cli\Cli;
+
+
+// Get location of autload.php
+if (!$autoload_file = getAutoloadLocation()) { 
+    die("Please ensure you load the Composer dependencies first.");
+}
+
+// Load Composer
+require_once($autoload_file);
+
+// Get location of container file
+if (!$container_file = getContainerFile()) { 
+    die("Unable to determine location of container definitions file.  Please specify one with the --container-file option, and try again.");
+}
+
+// Init Migrations
+$migrations = new Migrations(
+    container_file: $container_file
+);
+
+// Run, and exit
+Cli::run();
+exit(0);
+
+/**
+ * Get autoload.php location
+ */
+function getAutoloadLocation():?string
+{
+
+    // Files to check
+    $files = [
+        __DIR__ . '/../../autoload.php', 
+        __DIR__ . '/../autoload.php', 
+        __DIR__ . '/vendor/autoload.php', 
+        __DIR__ . '/autoload.php'
+    ];
+
+        // Go through files
+    foreach ($files as $file) { 
+        if (file_exists($file)) { 
+            return $file;
+        }
+    }
+
+    // Not found, return null
+    return null;
+
+}
+
+/** 
+* Get container file location
+ */
+function getContainerFile():?string
+{
+
+    // Check arguments
+    list($args, $opt) = Cli::getArgs(['container-file']);
+    if (isset($opt['container-file']) && $opt['container-file'] != '' && file_exists($opt['container-file'])) { 
+        return $opt['container-file'];
+    }
+
+    // Set files
+    $files = [
+        __DIR__ . '/config/container.php', 
+        __DIR__ . '../apex/migrations/config/container.php', 
+        __DIR__ . '/vendor/apex/migrations/config/container.php', 
+        __DIR__ . '/container.php'
+    ];
+
+    // Go through files
+    $container_file = null;
+    foreach ($files as $file) { 
+        if (!file_exists($file)) { 
+            continue;
+        }
+
+        $container_file = $file;
+        break;
+    }
+
+    // Return
+    return $container_file;
+
+}
+
+
