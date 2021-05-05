@@ -128,6 +128,7 @@ class Installer
         }
         $obj = Di::make($full_class);
         $start = hrtime(true);
+        $this->db->closeCursors();
 
         // Pre-install, if needed
         if (method_exists($obj, 'preInstall')) { 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
 
-namespace Apex\Migrations\Handler;
+namespace Apex\Migrations\Handlers;
 
 
 /**

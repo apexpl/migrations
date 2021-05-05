@@ -116,6 +116,7 @@ class Remover
         if ($this->send_output === true) { 
             Cli::send("Removing migration $class_name from package $package\r\n");
         }
+        $this->db->closeCursors();
 
         // Pre-rollback, if needed
         if (method_exists($obj, 'preRollback')) { 

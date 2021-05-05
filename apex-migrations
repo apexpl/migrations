@@ -65,10 +65,13 @@ function getContainerFile():?string
     if (isset($opt['container-file']) && $opt['container-file'] != '' && file_exists($opt['container-file'])) { 
         return $opt['container-file'];
     }
+    $cwd = getcwd();
 
     // Set files
     $files = [
+        $cwd . '/config/container.php', 
         __DIR__ . '/config/container.php', 
+        __DIR__ . '/../../config/container.php', 
         __DIR__ . '../apex/migrations/config/container.php', 
         __DIR__ . '/vendor/apex/migrations/config/container.php', 
         __DIR__ . '/container.php'

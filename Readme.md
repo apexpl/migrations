@@ -28,41 +28,6 @@ Install via Composer with:
     5. [rollback](https://github.com/apexpl/migrations/blob/master/docs/cli/rollback.md)
 
 
-
-## Basic Usage
-
-~~~php
-use Apex\Syrus\Syrus;
-
-// Start
-$syrus = new Syrus();
-
-// Assign some variables
-$syrus->assign('name', 'value');
-
-// Assign array
-$location = [
-    'city' => 'Toronto', 
-    'province' => 'Ontario', 
-    'country' => 'Canada'
-];
-$syrus->assign('loc', $location);
-
-// Add foreach blocks
-$syrus->addBlock('users', ['username' => 'jsmith', 'email' => 'jsmith@domain.com']);
-$syrus->addBlock('users', ['username' => 'mike', 'email' => 'mike@domain.com']);
-
-// ADd error callout
-$this->addCallout('Uh oh, there was a problem.', 'error');
-
-// Render template
-echo $syrus->render('contact.html');
-
-// Or, use auto-routing and render template based on URI being viewed.
-echo $syrus->render();
-~~~
-
-
 ## Support
 
 If you have any questions, issues or feedback for Syrus, please feel free to drop a note on the <a href="https://reddit.com/r/apexpl/">ApexPl Reddit sub</a> for a prompt and helpful response.

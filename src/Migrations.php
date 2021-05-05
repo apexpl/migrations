@@ -6,6 +6,8 @@ namespace Apex\Migrations;
 use Apex\Migrations\Config;
 use Apex\Container\Di;
 use Apex\Db\Interfaces\DbInterface;
+use Apex\Debugger\Interfaces\DebuggerInterface;
+use redis;
 
 /**
  * Migrations
@@ -75,6 +77,13 @@ class Migrations
         Di::set(__CLASS__, $this);
         Di::markItemAsService(DbInterface::class);
 
+        // Mark redis as service, if needed
+        if (Di::has(redis::class)) { 
+            Di::markItemAsService(redis::class);
+        }
+        if (Di::has(DebuggerInterface::class)) { 
+            Di::markItemAsService(DebuggerInterface::class);
+        }
     }
 
     /**
