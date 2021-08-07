@@ -4,7 +4,6 @@ declare(strict_types = 1);
 namespace ~namespace~\~class_name~;
 
 use Apex\Migrations\Handlers\Migration;
-use Apex\Container\Di;
 use Apex\Db\Interfaces\DbInterface;
 
 /**
@@ -13,12 +12,12 @@ use Apex\Db\Interfaces\DbInterface;
 class migrate extends Migration
 {
 
-    // Properties
-    public string $author_username = '~author_username~';
-    public string $author_name = '~author_name~';
-    public string $author_email = '~author_email~';
-    public string $branch = '~branch~';
-
+    /**
+     * Whether or not to include this migration during initial package installation.
+     * This should always be false, and instead you should update the main database schema 
+     * as well at /etc/<PACKAGE>/install.sql with any modifications.
+     */
+    public bool $include_with_initial_install = false; 
 
     /**
      * Install
@@ -31,13 +30,13 @@ class migrate extends Migration
     }
 
     /**
-     * Rollback
+     * Remove
      */
-    public function rollback(DbInterface $db):void
+    public function remove(DbInterface $db):void
     {
 
         // Execute SQL file
-        $db->executeSqlFile(__DIR__ . '/rollback.sql');
+        $db->executeSqlFile(__DIR__ . '/remove.sql');
     }
 
 }

@@ -26,7 +26,7 @@ class Installer
         private Config $config,
         private Migrations $migrations,  
         private DbInterface $db, 
-        private bool $send_output = false
+        private bool $send_output = true
     ) { 
 
     }
@@ -93,6 +93,7 @@ class Installer
         // Go through all pending migrations
         $installed = [];
         foreach ($res['pending'] as $revision => $class_name) { 
+
             $installed[$class_name] = $this->installMigration($package, $class_name);
             if ($this->send_output === true) { 
                 Cli::send("Installed migration $class_name in " . $installed[$class_name] . "ms\n");
@@ -109,45 +110,37 @@ class Installer
     public function installMigration(string $package, string $class_name):int
     {
 
-        // Verify class name format
-        if (!preg_match("/^(.+)\_(\d{10})$/", $class_name, $match)) { 
+        // Get adapter
+        if (preg_match("/Eloquent\/(\d\d\d\d)_(\d\d)_(\d\d)_(\d\d)(\d\d)(\d\d)_/", $class_name, $m)) { 
+            $adapter_class = "Apex\\Migrations\\Adapters\\EloquentAdapter";
+            $revision = mktime((int) $m[4], (int) $m[5], (int) $m[6], (int) $m[2], (int) $m[3], (int) $m[1]);
+            $type = 'eloquent';
+        } elseif (preg_match("/Doctrine\/(.+)/", $class_name, $m)) { 
+            $adapter_class = "Apex\\Migrations\\Adapters\\DoctrineAdapter";
+            $revision = 0;
+            $type = 'doctrine';
+        } elseif (preg_match("/^(.+)\_(\d{10})$/", $class_name, $match)) { 
+            $adapter_class = "Apex\\Migrations\\Adapters\\ApexAdapter";
+            $revision = (int) $match[2];
+            $type = 'apex';
+        } else { 
             throw new MigrationsInvalidArgumentException("Invalid migration class name, $class_name");
         }
-        $revision = (int) $match[2];
 
-        // Get info
-        if (!list($dirname, $namespace) = $this->config->getPackage($package)) { 
+        // Get package info
+        if (!list($dirname, $namespace, $entity_paths) = $this->config->getPackage($package)) { 
             throw new MigrationsPackageNotExistsException("Package does not exist, $package");
         }
-        require_once("$dirname/$class_name/migrate.php");
 
-        // Load object
-        $full_class = $namespace . "\\" . $class_name . "\\migrate";
-        if (!class_exists($full_class)) { 
-            throw new MigrationsClassNotExistsException("Migration class does not exist, $full_class");
-        }
-        $obj = Di::make($full_class);
-        $start = hrtime(true);
-        $this->db->closeCursors();
-
-        // Pre-install, if needed
-        if (method_exists($obj, 'preInstall')) { 
-            $obj->preInstall($this->db);
-        }
-
-        // Install
-        $obj->install($this->db);
-
-        // Post-install, if needed
-        if (method_exists($obj, 'postInstall')) { 
-            $obj->postInstall($this->db);
-        }
-        $execute_ms = (int) ((hrtime(true) - $start) / 1000000);
+        // Load adapter
+        $adapter = Di::make($adapter_class);
+        $execute_ms = $adapter->install($class_name, $dirname, $namespace, $entity_paths);
 
         // Add to db
         $table_name = $this->config->getTableName();
         $this->db->insert($table_name, [
             'transaction_id' => $this->getTransactionId(), 
+            'type' => $type,
             'package' => $package,  
             'revision' => $revision, 
             'class_name' => $class_name, 

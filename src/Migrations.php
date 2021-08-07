@@ -54,6 +54,7 @@ class Migrations
         // Create table
         $sql = str_replace('~table_name~', $table_name, trim(file_get_contents(__DIR__ . '/../config/setup.sql')));
         $db->query($sql);
+        $db->clearCache();
     }
 
     /**

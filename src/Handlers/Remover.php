@@ -21,7 +21,7 @@ class Remover
     public function __construct(
         private Config $config, 
         private DbInterface $db, 
-        private bool $send_output = false
+        private bool $send_output = true
     ) {
 
     }
@@ -100,36 +100,19 @@ class Remover
         }
 
         // Get info
-        if (!list($dirname, $namespace) = $this->config->getPackage($package)) { 
+        if (!list($dirname, $namespace, $entity_paths) = $this->config->getPackage($package)) { 
             throw new MigrationsPackageNotExistsException("Package does not exist, $package");
         }
-        require_once("$dirname/$class_name/migrate.php");
 
-        // Load object
-        $full_class = $namespace . "\\" . $class_name . "\\migrate";
-        if (!class_exists($full_class)) { 
-            throw new MigrationsClassNotExistsException("Migration class does not exist, $full_class");
-        }
-        $obj = Di::make($full_class);
+        // Load adapter
+        $adapter_class = "Apex\\Migrations\\Adapters\\" . ucwords($row['type']) . "Adapter";
+        $adapter = Di::make($adapter_class);
 
-        // Send output, if needed
-        if ($this->send_output === true) { 
-            Cli::send("Removing migration $class_name from package $package\r\n");
-        }
-        $this->db->closeCursors();
+        // Send message
+        Cli::send("Removing migration $class_name from package $row[package]\r\n");
 
-        // Pre-rollback, if needed
-        if (method_exists($obj, 'preRollback')) { 
-            $obj->preRollback($this->db);
-        }
-
-        // Rollback
-        $obj->rollback($this->db);
-
-        // Post-rollback, if needed
-        if (method_exists($obj, 'postRollback')) { 
-            $obj->postRollback($this->db);
-        }
+        // Remove migration
+        $adapter->rollback($class_name, $namespace, $dirname, $entity_paths); 
 
         // Delete from db
         $this->db->query("DELETE FROM $table_name WHERE package = %s AND class_name = %s", $package, $class_name);

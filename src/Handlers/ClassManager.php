@@ -6,6 +6,7 @@ namespace Apex\Migrations\Handlers;
 use Apex\Container\Di;
 use Apex\Migrations\{Config, Migrations};
 use Apex\Db\Interfaces\DbInterface;
+use Apex\Migrations\Handlers\Io;
 use Apex\Migrations\Exceptions\{MigrationsPackageNotExistsException, MigrationsDirectoryException};
 
 /**
@@ -27,7 +28,7 @@ class ClassManager
     /**
      * Create new class
      */
-    public function create(string $package = '', string $alias = '', string $branch = ''):string
+    public function create(string $package = '', string $alias = '', string $branch = '', string $type = 'apex'):string
     {
 
         // Get default package
@@ -35,43 +36,22 @@ class ClassManager
             $package = 'default';
         }
 
-        // Get alias
-        if ($alias == '') { 
-            $alias = date('Ymd_His');
-        }
-        $class_name = $alias . '_' . time();
-
         // Get package from config
         if (!list($dirname, $namespace) = $this->config->getPackage($package)) { 
             throw new MigrationsPackageNotExistsException("Package does not exist within YAML configuration file, $package");
         }
-        $dirname = str_replace('~package~', $package, $dirname) . '/' . $class_name;
+        $dirname = str_replace('~package~', $package, $dirname);
         $author = $this->config->getAuthor();
 
-        // Create directory
-        mkdir($dirname);
+        // Load adapter
+        $adapter_class = "\\Apex\\Migrations\\Adapters\\" . ucwords($type) . 'Adapter';
+        $adapter = Di::make($adapter_class);
 
-        // Set replace
-        $replace = [
-            '~namespace~' => $namespace, 
-            '~class_name~' => $class_name, 
-            '~package~' => $package, 
-            '~alias~' => $alias, 
-            '~author_username~' => str_replace("'", "\\'", ($author['username'] ?? '')), 
-            '~author_name~' => str_replace("'", "\\'", ($author['full_name'] ?? '')), 
-            '~author_email~' => $author['email'] ?? '', 
-            '~branch~' => $branch
-        ];
-
-        // Create files
-        foreach (['migrate.php', 'install.sql', 'rollback.sql'] as $file) { 
-            $code = file_get_contents(__DIR__ . '/../../config/skel/' . $file);
-            $code = strtr($code, $replace);
-            file_put_contents("$dirname/$file", $code);
-        }
+        // Create
+        $res = $adapter->create($dirname, $namespace, $alias, $branch, $author);
 
         // Return
-        return $dirname;
+        return $res;
     }
 
     /**
@@ -89,11 +69,6 @@ class ClassManager
             throw new MigrationsPackageNotExistsException("Package does not exist, $package");
         }
 
-        // Open directory
-        if (!$handle = opendir($dirname)) { 
-            throw new MigrationsDirectoryException("Unable to open '$package' package directory at $dirname");
-        }
-
         // Start results
         $res = [
             'latest' => [
@@ -106,17 +81,26 @@ class ClassManager
             'pending' => []
         ];
 
-        // GO through files
-        while ($file = readdir($handle)) { 
+        // Check directory exists
+        if (!is_dir($dirname)) { 
+            return $res;
+        }
 
-            // Check file name format
-            if (!preg_match("/^(.+)\_(\d{10})$/", $file, $match)) { 
-                continue;
-            } elseif (!file_exists("/$dirname/$file/migrate.php")) { 
+        // Scan directory for files
+        $io = Di::make(Io::class);
+        $files = $io->parseDir($dirname, true);
+
+        // GO through files
+        foreach ($files as $file) { 
+
+            // Check if valid migration class
+            if (preg_match("/^(Eloquent|Doctrine)\/(.+?)\.php$/", $file, $match)) { 
+                $class_name = $match[1] . "/" . $match[2];
+            } elseif (preg_match("/^(.+)\_(\d{10})$/", $file, $match) && file_exists("/$dirname/$file/migrate.php")) { 
+                $class_name = $match[1] . '_' . $match[2];
+            } else { 
                 continue;
             }
-            $class_name = $match[1] . '_' . $match[2];
-
             // Check database
             if ($row = $db->getRow("SELECT * FROM $table_name WHERE class_name = %s", $class_name)) { 
                 $res['installed'][$row['revision']] = $row['class_name'] . ' installed on ' . $row['installed_at'] . ' (' . (int) $row['execute_ms'] . ' ms)';

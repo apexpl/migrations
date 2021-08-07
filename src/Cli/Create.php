@@ -34,13 +34,14 @@ class Create
     {
 
         // Get options
-        list($args, $opt) = Cli::getArgs(['alias', 'package','branch']);
+        list($args, $opt) = Cli::getArgs(['alias', 'package','branch', 'type']);
         $package = $opt['package'] ?? '';
         $alias = $opt['alias'] ?? '';
         $branch = $opt['branch'] ?? '';
+        $type = $opt['type'] ?? 'apex';
 
         // Create new
-        $dirname = $this->manager->create($package, $alias, $branch);
+        $dirname = $this->manager->create($package, $alias, $branch, $type);
 
         // SEnd message
         Cli::send("Successfully created new migration, which is available at:\r\n\r\n      $dirname\r\n");

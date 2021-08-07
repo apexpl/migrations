@@ -13,9 +13,9 @@ return [
      * Database.  Change with your credentials.
      */
     DbInterface::class => [\Apex\Db\Drivers\mySQL\mySQL::class, ['params' => [
-        'dbname' => 'my_database', 
-        'user' => 'myuser', 
-        'password' => 'secret_password']]
+        'dbname' => 'apex', 
+        'user' => 'boxer', 
+        'password' => 'white4882']]
     ], 
 
     /**
