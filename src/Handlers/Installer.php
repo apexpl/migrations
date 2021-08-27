@@ -72,7 +72,7 @@ class Installer
     /**
      * Migrate a package
      */
-    public function migratePackage(string $package):?array
+    public function migratePackage(string $package, bool $is_initial_install = false):?array
     {
 
         // Scan directory
@@ -94,7 +94,7 @@ class Installer
         $installed = [];
         foreach ($res['pending'] as $revision => $class_name) { 
 
-            $installed[$class_name] = $this->installMigration($package, $class_name);
+            $installed[$class_name] = $this->installMigration($package, $class_name, $is_initial_install);
             if ($this->send_output === true) { 
                 Cli::send("Installed migration $class_name in " . $installed[$class_name] . "ms\n");
             }
@@ -107,7 +107,7 @@ class Installer
     /**
      * Install migration
      */
-    public function installMigration(string $package, string $class_name):int
+    public function installMigration(string $package, string $class_name, bool $is_initial_install = false):int
     {
 
         // Get adapter
@@ -134,7 +134,7 @@ class Installer
 
         // Load adapter
         $adapter = Di::make($adapter_class);
-        $execute_ms = $adapter->install($class_name, $dirname, $namespace, $entity_paths);
+        $execute_ms = $adapter->install($class_name, $dirname, $namespace, $entity_paths, $is_initial_install);
 
         // Add to db
         $table_name = $this->config->getTableName();
@@ -171,6 +171,14 @@ class Installer
 
         // Return
         return $this->transaction_id;
+    }
+
+    /**
+     * Set send output
+     */
+    public function setSendOutput(bool $send_output):void
+    {
+        $this->send_output = $send_output;
     }
 
 }

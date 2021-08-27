@@ -71,7 +71,7 @@ class EloquentAdapter implements AdapterInterface
     /**
      * Install
      */
-    public function install(string $filename, string $dirname, string $namespace, array $entity_paths = []):int
+    public function install(string $filename, string $dirname, string $namespace, array $entity_paths = [], bool $is_initial_install = false):int
     {
 
         // Get class name

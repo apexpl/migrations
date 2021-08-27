@@ -66,7 +66,7 @@ class ApexAdapter implements AdapterInterface
     /**
      * Install migration
      */
-    public function install(string $class_name, string $dirname, string $namespace, array $entity_paths = []):int
+    public function install(string $class_name, string $dirname, string $namespace, array $entity_paths = [], bool $is_initial_install = false):int
     {
 
         // Load file
@@ -80,6 +80,14 @@ class ApexAdapter implements AdapterInterface
         $obj = Di::make($full_class);
         $start = hrtime(true);
         $this->db->closeCursors();
+
+        // Check for initial install
+        if ($is_initial_install === true) { 
+            $include_install = $obj->include_with_initial_install ?? true;
+            if ($include_install === false) { 
+                return 0;
+            }
+        }
 
         // Pre-install, if needed
         if (method_exists($obj, 'preInstall')) { 

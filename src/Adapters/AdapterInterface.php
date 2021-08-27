@@ -17,7 +17,7 @@ interface AdapterInterface
     /**
      * Install migration
      */
-    public function install(string $class_name, string $dirname, string $namespace, array $entity_paths = []):int;
+    public function install(string $class_name, string $dirname, string $namespace, array $entity_paths = [], bool $is_initial_install = false):int;
 
     /**
      * Rollback
