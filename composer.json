@@ -15,18 +15,18 @@
     "type": "package",
     "license": "MIT",
     "require": {
-        "php": ">=8.0.0",
-        "apex/db": "^0.3",
-        "apex/container": "~0.3",
-        "symfony/yaml": "~5.2"
+        "php": ">=8.0",
+        "apex/db": "^2.0",
+        "apex/container": "^2.0",
+        "symfony/yaml": "^6.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5"
+        "phpunit/phpunit": "^9.5",
+        "apex/signer": "^2.0"
     }, 
     "bin": [
         "apex-migrations"
     ], 
-
     "autoload": {
         "psr-4": { 
             "Apex\\Migrations\\": "src/" 
