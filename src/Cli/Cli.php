@@ -145,7 +145,13 @@ class Cli
      */
     public static function send(string $data):void
     {
-        fputs(STDOUT, $data);
+
+        if (!defined('STDOUT')) {
+            echo $data;
+        } else {
+            fputs(STDOUT, $data);
+        }
+
     }
 
     /**
