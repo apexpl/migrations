@@ -33,7 +33,8 @@ class ApexAdapter implements AdapterInterface
         if ($alias == '') { 
             $alias = 'Migration';
         }
-        $class_name = $alias . '_' . time();
+        $alias = str_replace('-', '_', $alias);
+        $class_name = 'm' . date('Ymd_His') . '_' . $alias;
 
         // Create directory
         $dir_name .= '/' . $class_name;
