@@ -119,9 +119,9 @@ class Installer
             $adapter_class = "Apex\\Migrations\\Adapters\\DoctrineAdapter";
             $revision = 0;
             $type = 'doctrine';
-        } elseif (preg_match("/^(.+)\_(\d{10})$/", $class_name, $match)) { 
+        } elseif (preg_match("/^m(\d\d\d\d)(\d\d)(\d\d)\_(\d\d)(\d\d)(\d\d)\_(.+)$/", $class_name, $m)) { 
             $adapter_class = "Apex\\Migrations\\Adapters\\ApexAdapter";
-            $revision = (int) $match[2];
+            $revision = mktime((int) $m[4], (int) $m[5], (int) $m[6], (int) $m[2], (int) $m[3], (int) $m[1]);
             $type = 'apex';
         } else { 
             throw new MigrationsInvalidArgumentException("Invalid migration class name, $class_name");

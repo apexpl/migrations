@@ -91,16 +91,17 @@ class ClassManager
         $files = $io->parseDir($dirname, true);
 
         // GO through files
-        foreach ($files as $file) { 
+        foreach ($files as $file) {
 
             // Check if valid migration class
             if (preg_match("/^(Eloquent|Doctrine)\/(.+?)\.php$/", $file, $match)) { 
                 $class_name = $match[1] . "/" . $match[2];
-            } elseif (preg_match("/^(.+)\_(\d{10})$/", $file, $match) && file_exists("/$dirname/$file/migrate.php")) { 
-                $class_name = $match[1] . '_' . $match[2];
+            } elseif (preg_match("/^m(\d{8})\_(\d{6})\_(.+)$/", $file, $match) && file_exists("/$dirname/$file/migrate.php")) { 
+                $class_name = $file;
             } else { 
                 continue;
             }
+
             // Check database
             if ($row = $db->getRow("SELECT * FROM $table_name WHERE class_name = %s", $class_name)) { 
                 $res['installed'][$row['revision']] = $row['class_name'] . ' installed on ' . $row['installed_at'] . ' (' . (int) $row['execute_ms'] . ' ms)';
