@@ -17,7 +17,7 @@
     "require": {
         "php": ">=8.0",
         "apex/db": "^2.0",
-        "apex/container": "^2.0",
+        "apex/container": ">=2.0",
         "symfony/yaml": "^6.0"
     },
     "require-dev": {
