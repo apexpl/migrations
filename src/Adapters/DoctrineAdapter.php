@@ -9,6 +9,8 @@ use Apex\Migrations\Handlers\Io;
 use Apex\Db\Interfaces\DbInterface;
 use Apex\Migrations\Exceptions\{MigrationsClassNotExistsException, MigrationsPackageNotExistsException};
 use Doctrine\Migrations\Generator\{DiffGenerator, Generator, SqlGenerator};
+use Doctrine\ORM\Mapping\Table;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\Migrations\Provider\OrmSchemaProvider;
 use Doctrine\Migrations\Configuration\Configuration;
 use Doctrine\Migrations\SchemaDumper;
@@ -23,7 +25,7 @@ class DoctrineAdapter implements AdapterInterface
      * Constructor
      */
     public function __construct(
-        private DbInterface $db,
+        private ?DbInterface $db,
         private Io $io,
         private Config $config
     ) { 
@@ -124,7 +126,7 @@ class DoctrineAdapter implements AdapterInterface
             if (!is_dir($path)) { 
                 continue;
             }
-            $files = $this->io->parseDir($path);
+            $files = scandir($path);
 
             // Go though files
             foreach ($files as $file) { 
@@ -134,13 +136,23 @@ class DoctrineAdapter implements AdapterInterface
                 }
                 $code = file_get_contents("$path/$file");
 
-                // Check for table annotation
-                if (!str_contains($code, '@Entity')) { 
-                    continue;
-                } elseif (!preg_match("/\@Table\(name=\"(.+?)\"/", $code, $m)) { 
-                    continue;
+                // Get fqdn
+                $filename = trim(str_replace(SITE_PATH, '', "$path/$file"), '/');
+                list($fqdn, $short_name) = $this->pathToNamespace($filename);
+                $fqdn .= "\\$short_name";
+
+                // Get attributes
+                $obj = new \ReflectionClass($fqdn);
+                $attributes = $obj->getAttributes();
+
+                // Go through attributes
+                foreach ($attributes as $attr) {
+
+                    if ($attr->getName() == Table::class) {
+                        $args = $attr->getArguments();
+                        $tables[] = $args['name'];
+                    }
                 }
-                $tables[] = $m[1];
             }
         }
 
@@ -215,22 +227,37 @@ class DoctrineAdapter implements AdapterInterface
 
         // Get Doctrine db
         $doctrine = \Apex\Db\Wrappers\Doctrine::init($this->db, $entity_paths);
-        $doctrine->getConfiguration()->setFilterSchemaAssetsExpression('/' . implode('|', $tables) . '/');
+        //$doctrine->getConfiguration()->setSchemaAssetsFilter('/' . implode('|', $tables) . '/');
+
+        // Get connection
+        $conn_opts = [
+            'pdo' => $this->db->connect_mgr->getConnection('write'),
+            'driver' => 'pdo_mysql'
+        ];
+        $connection = DriverManager::getConnection($conn_opts);
 
         // Create migrations configuration
-        $configuration = new Configuration($doctrine->getConnection());
+        $configuration = new Configuration($connection);
         $configuration->addMigrationsDirectory($namespace . "\\Doctrine", "$dirname/Doctrine");
         $configuration->setAllOrNothing(true);
         $configuration->setCheckDatabasePlatform(false);
 
+$doctrine->getConnection()->executeQuery("CREATE TABLE test (id INT, name VARCHAR(100))");
+echo "Exected\n"; exit;
+$m = get_class_methods($connection);
+print_r($m); exit;
+$p = $connection->getDatabasePlatform();
+$p = $doctrine->getConnection()->getDatabasePlatform();
+echo "Got p\n"; exit;
+var_dump($p); exit;
         // Create schema dumper
         $dumper = new SchemaDumper(
             $doctrine->getConnection()->getDatabasePlatform(),
-            $doctrine->GetConnection()->getSchemaManager(),
-            new Generator($configuration),
+            $doctrine->GetConnection()->createSchemaManager(),
+            new Generator($doctrine->getConfiguration()),
             new SqlGenerator($configuration, $doctrine->getConnection()->getDatabasePlatform())
         );
-
+echo "Got dumper\n"; exit;
         // Dump schema
         $class_name = $namespace . "\\Doctrine\\Version" . date('YmdHis');
         $filename = $dumper->dump($class_name);
@@ -282,6 +309,26 @@ class DoctrineAdapter implements AdapterInterface
         }
 
     }
+
+    /**
+     * Path to Namespace
+     */
+    private static function pathToNamespace(string $filename):array
+    {
+
+        // Trim excess
+        $filename = preg_replace("/^src\//", "", trim($filename, '/'));
+        $filename = preg_replace("/\.php$/", "", $filename);
+
+        // Get names
+        $parts = explode("/", $filename);
+        $class_name = array_pop($parts);
+        $namespace = "App\\" . implode("\\", $parts);
+
+        // Return
+        return [$namespace, $class_name];
+    }
+
 
 }
 
