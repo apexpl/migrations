@@ -226,15 +226,9 @@ class DoctrineAdapter implements AdapterInterface
         $tables = $this->getDoctrineTables($entity_paths);
 
         // Get Doctrine db
-        $doctrine = \Apex\Db\Wrappers\Doctrine::init($this->db, $entity_paths);
-        //$doctrine->getConfiguration()->setSchemaAssetsFilter('/' . implode('|', $tables) . '/');
-
-        // Get connection
-        $conn_opts = [
-            'pdo' => $this->db->connect_mgr->getConnection('write'),
-            'driver' => 'pdo_mysql'
-        ];
-        $connection = DriverManager::getConnection($conn_opts);
+        $manager = \Apex\Db\Wrappers\Doctrine::init($this->db, $entity_paths);
+        $connection = $manager->getConnection();
+        //$doctrine->getConfiguration()->setSchemaAssetsFilter([$this, 'getDoctrineTables']);
 
         // Create migrations configuration
         $configuration = new Configuration($connection);
@@ -242,22 +236,14 @@ class DoctrineAdapter implements AdapterInterface
         $configuration->setAllOrNothing(true);
         $configuration->setCheckDatabasePlatform(false);
 
-$doctrine->getConnection()->executeQuery("CREATE TABLE test (id INT, name VARCHAR(100))");
-echo "Exected\n"; exit;
-$m = get_class_methods($connection);
-print_r($m); exit;
-$p = $connection->getDatabasePlatform();
-$p = $doctrine->getConnection()->getDatabasePlatform();
-echo "Got p\n"; exit;
-var_dump($p); exit;
         // Create schema dumper
         $dumper = new SchemaDumper(
-            $doctrine->getConnection()->getDatabasePlatform(),
-            $doctrine->GetConnection()->createSchemaManager(),
-            new Generator($doctrine->getConfiguration()),
-            new SqlGenerator($configuration, $doctrine->getConnection()->getDatabasePlatform())
+            $connection->getDatabasePlatform(),
+            $connection->createSchemaManager(),
+            new Generator($configuration),
+            new SqlGenerator($configuration, $connection->getDatabasePlatform())
         );
-echo "Got dumper\n"; exit;
+
         // Dump schema
         $class_name = $namespace . "\\Doctrine\\Version" . date('YmdHis');
         $filename = $dumper->dump($class_name);
